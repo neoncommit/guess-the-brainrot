@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>System Login - Vibe Check</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { 
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+      background-color: #000; 
+      background-image: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop');
+      background-size: cover;
+      background-position: center;
+      color: white; 
+      overflow: hidden; 
+      user-select: none; 
+    }
+    
+    .shake { animation: shake 0.3s cubic-bezier(.36,.07,.19,.97) both; }
+    @keyframes shake {
+      10%, 90% { transform: translate3d(-2px, 0, 0); }
+      20%, 80% { transform: translate3d(4px, 0, 0); }
+      30%, 50%, 70% { transform: translate3d(-8px, 0, 0); }
+      40%, 60% { transform: translate3d(8px, 0, 0); }
+    }
+    
+    .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.98) translateY(10px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .btn-3d {
+      box-shadow: 0 4px 0px rgba(0,0,0,0.5), 0 8px 10px rgba(0,0,0,0.3);
+      transition: all 0.1s ease;
+    }
+    .btn-3d:active:not(:disabled) {
+      transform: translateY(4px);
+      box-shadow: 0 0px 0px rgba(0,0,0,0.5), 0 2px 4px rgba(0,0,0,0.3);
+    }
+    .btn-3d:disabled {
+      opacity: 0.5; cursor: not-allowed; box-shadow: none; transform: translateY(4px);
+    }
+    
+    .arena-3d {
+      perspective: 1000px;
+      box-shadow: inset 0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    .pixelated {
+      image-rendering: crisp-edges;
+      image-rendering: pixelated;
+    }
+
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 8px; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.4); border-radius: 8px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.6); }
+  </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+<script>
+  window.addEventListener('keydown', function(e) {
+    if(e.code === 'Space' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+      e.preventDefault();
+    }
+  });
+</script>
+
+<div class="w-full max-w-2xl bg-white/10 backdrop-blur-2xl rounded-[2rem] shadow-[0_0_50px_rgba(0,0,0,0.5)] p-8 relative overflow-hidden fade-in border border-white/20 flex flex-col items-center max-h-[95vh] z-10" id="app-container">
+  
+  <div class="flex flex-col items-center mb-6">
+    <div class="w-24 h-24 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 shadow-xl border-2 border-white/30 flex items-center justify-center text-4xl mb-4">
+      🧑‍💻
+    </div>
+    <h1 class="text-3xl font-semibold text-white tracking-wide drop-shadow-md">Administrator</h1>
+  </div>
+
+  <div class="w-full max-w-lg relative flex items-center mb-2 group">
+    <textarea id="pw" class="w-full bg-black/30 backdrop-blur-md border border-white/20 text-white px-5 py-4 pr-16 rounded-2xl focus:outline-none focus:border-white/50 focus:bg-black/50 focus:ring-2 focus:ring-white/20 transition-all text-lg font-medium resize-none shadow-inner placeholder-white/50" rows="2" placeholder="Enter password..."></textarea>
+    
+    <button id="btn" class="absolute right-3 bg-white/20 hover:bg-white/40 text-white w-10 h-10 flex items-center justify-center rounded-xl transition-all shadow-md backdrop-blur-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+      </svg>
+    </button>
+  </div>
+  
+  <p id="msg" class="text-sm font-bold text-white/70 text-center uppercase tracking-widest mb-6 h-5 drop-shadow-sm">Awaiting Input...</p>
+
+  <div class="w-full max-w-lg flex justify-between items-center mb-2 px-1">
+    <span class="text-xs font-bold text-white/60 uppercase tracking-widest">Security Policies</span>
+    <button id="skip-rule-btn" class="text-[10px] bg-red-500/80 hover:bg-red-500 text-white py-1 px-3 rounded-lg transition-all uppercase tracking-wider shadow-md backdrop-blur-sm border border-red-400/50 btn-3d">
+      Skip Rule ⏭
+    </button>
+  </div>
+
+  <div id="rules-container" class="w-full max-w-lg bg-black/40 backdrop-blur-md p-5 rounded-2xl flex-1 overflow-y-auto border border-white/10 shadow-inner">
+    <ul id="rules-list" class="list-disc ml-5 space-y-3 transition-all duration-300"></ul>
+  </div>
+
+  <div id="mini-game-overlay" class="absolute inset-0 bg-black/80 backdrop-blur-3xl z-50 hidden flex-col items-center justify-center p-6 text-center border border-red-500/50 rounded-[2rem]">
+    
+    <div class="w-full flex justify-between items-start mb-2 z-30">
+      <h2 id="mini-game-title" class="text-3xl font-black text-red-400 uppercase italic tracking-wider drop-shadow-[0_0_10px_rgba(239,68,68,0.5)] text-left"></h2>
+      <button onclick="skipGameInstant()" class="bg-white/10 hover:bg-white/20 border border-white/30 text-white font-bold py-2 px-4 rounded-lg btn-3d text-xs uppercase tracking-wider whitespace-nowrap ml-4 relative z-50 backdrop-blur-md transition-all">
+        Skip Game ⏩
+      </button>
+    </div>
+    
+    <p id="mini-game-desc" class="mb-4 text-white/80 font-bold text-lg drop-shadow-md z-30 text-left w-full"></p>
+    
+    <div id="mini-game-container" class="arena-3d w-full h-80 mt-4 bg-black/40 rounded-2xl border border-white/20 relative overflow-hidden shadow-2xl backdrop-blur-md cursor-default isolate" style="-webkit-mask-image: -webkit-radial-gradient(white, black);">
+      <div id="arena-bg" class="absolute inset-0 z-0 pointer-events-none bg-black rounded-2xl"></div>
+      <div id="arena-content" class="absolute inset-0 z-10 flex flex-col items-center justify-center w-full h-full"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// --- Optimization Utilities ---
+const $ = id => document.getElementById(id);
+
+const shakeElement = (el) => {
+  el.classList.remove("shake");
+  void el.offsetWidth; 
+  el.classList.add("shake");
+};
+const shakeArena = () => shakeElement($('mini-game-container'));
+
+// --- Audio Engine ---
+const audioCache = {};
+function playSound(url, volume = 1.0) {
+  if (!audioCache[url]) audioCache[url] = new Audio(url);
+  const sound = audioCache[url].cloneNode(); 
+  sound.volume = volume;
+  sound.play().catch(() => {}); 
+}
+
+const sfx = {
+  success: () => playSound("https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"),
+  error: () => playSound("https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg"),
+  pop: () => playSound("https://actions.google.com/sounds/v1/cartoon/pop.ogg"),
+  jump: () => playSound("https://actions.google.com/sounds/v1/cartoon/cartoon_boing.ogg"),
+  beep: () => playSound("https://actions.google.com/sounds/v1/alarms/beep_short.ogg"),
+  scare: () => playSound("https://actions.google.com/sounds/v1/horror/monster_zombie_growl_01.ogg")
+};
+
+const mainBgm = new Audio("https://files.catbox.moe/ad7pvz.mp3");
+mainBgm.loop = true;
+mainBgm.volume = 0.25;
+let bgmStarted = false;
+
+const startBgm = () => {
+  if (!bgmStarted) {
+    mainBgm.play().catch(()=>{});
+    bgmStarted = true;
+  }
+};
+window.addEventListener('click', startBgm, {once: true});
+window.addEventListener('keydown', startBgm, {once: true});
+
+// --- UI Elements ---
+const appContainer = $("app-container");
+const pwInput = $("pw");
+const btn = $("btn");
+const skipRuleBtn = $("skip-rule-btn");
+const msg = $("msg");
+const overlay = $("mini-game-overlay");
+
+let arena = $("arena-content");
+let level = 0;
+
+let activeIntervals = [];
+let activeTimeouts = [];
+let penaltyAudioLayer = null;
+
+function addInterval(fn, time) { let id = setInterval(fn, time); activeIntervals.push(id); return id; }
+function addTimeout(fn, time) { let id = setTimeout(fn, time); activeTimeouts.push(id); return id; }
+function clearAllTimers() {
+  activeIntervals.forEach(clearInterval); activeIntervals = [];
+  activeTimeouts.forEach(clearTimeout); activeTimeouts = [];
+}
+
+pwInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    if (!btn.disabled) btn.click();
+  }
+});
+
+function resetArenaDOM() {
+  let newArena = arena.cloneNode(false);
+  newArena.removeAttribute('style'); // FIX: Prevents red flash style from getting stuck across resets
+  arena.parentNode.replaceChild(newArena, arena);
+  arena = newArena; 
+  arena.className = "absolute inset-0 z-10 flex flex-col items-center justify-center w-full h-full"; 
+  window.onkeydown = null; 
+  window.onmousemove = null;
+  arena.onmouseover = null;
+  arena.onmouseleave = null;
+  arena.onmousedown = null;
+  arena.onmousemove = null;
+  arena.parentNode.onmouseup = null;
+  arena.parentNode.onmousedown = null;
+}
+
+// --- Penalty Flow ---
+function startPenalty(title, desc, vidUrl, audioUrl) {
+  clearAllTimers();
+  resetArenaDOM();
+  if(document.activeElement) document.activeElement.blur();
+  
+  pwInput.disabled = true;
+  btn.disabled = true;
+  skipRuleBtn.disabled = true;
+  
+  $("mini-game-title").innerText = title;
+  $("mini-game-desc").innerText = desc;
+  
+  if (bgmStarted) mainBgm.pause();
+
+  if (penaltyAudioLayer) { penaltyAudioLayer.pause(); penaltyAudioLayer = null; }
+  if (audioUrl) {
+    penaltyAudioLayer = new Audio(audioUrl);
+    penaltyAudioLayer.loop = true;
+    penaltyAudioLayer.volume = 0.4;
+    penaltyAudioLayer.play().catch(e => console.log("Custom audio block:", e));
+  }
+
+  let bgContainer = $('arena-bg');
+  bgContainer.innerHTML = ''; 
+  if (vidUrl) {
+    bgContainer.innerHTML = `<video id="global-meme-bg" class="w-full h-full object-cover opacity-50 rounded-2xl" src="${vidUrl}" loop playsinline></video>`;
+    let vid = $('global-meme-bg');
+    addTimeout(() => {
+      if (vid) {
+        vid.volume = 0.5;
+        vid.muted = false; 
+        vid.play().catch(e => {
+          vid.muted = true;
+          vid.play().catch(err => console.log("Video fully blocked:", err));
+        });
+      }
+    }, 50);
+  }
+
+  overlay.classList.remove("hidden");
+  overlay.classList.add("flex");
+}
+
+function resolvePenalty() {
+  sfx.success();
+  clearAllTimers();
+  resetArenaDOM();
+  
+  if (penaltyAudioLayer) { penaltyAudioLayer.pause(); penaltyAudioLayer = null; }
+  let globalBg = $('global-meme-bg');
+  if (globalBg) { globalBg.pause(); globalBg.remove(); }
+  if (bgmStarted) { mainBgm.play().catch(()=>{}); }
+  
+  arena.innerHTML = "<div class='text-green-400 font-black text-6xl uppercase tracking-widest fade-in z-50 drop-shadow-[0_0_20px_rgba(74,222,128,0.8)]'>CLEARED</div>";
+  
+  addTimeout(() => {
+    overlay.classList.add("hidden");
+    overlay.classList.remove("flex");
+    
+    pwInput.disabled = false;
+    btn.disabled = false;
+    skipRuleBtn.disabled = false;
+    pwInput.focus();
+  }, 800);
+}
+
+function skipGameInstant() {
+  sfx.success();
+  clearAllTimers();
+  resetArenaDOM();
+  
+  if (penaltyAudioLayer) { penaltyAudioLayer.pause(); penaltyAudioLayer = null; }
+  let globalBg = $('global-meme-bg');
+  if (globalBg) { globalBg.pause(); globalBg.remove(); }
+  if (bgmStarted) { mainBgm.play().catch(()=>{}); }
+  
+  overlay.classList.add("hidden");
+  overlay.classList.remove("flex");
+  
+  pwInput.disabled = false;
+  btn.disabled = false;
+  skipRuleBtn.disabled = false;
+  pwInput.focus();
+}
+
+// --- THE UNIQUE MINI GAMES ---
+
+const AUDIOS = {
+  retro: "https://cdn.pixabay.com/audio/2021/08/09/audio_825e3690d6.mp3",
+  cyber: "https://cdn.pixabay.com/audio/2022/11/06/audio_731c3c9bd6.mp3",
+  scary: "https://cdn.pixabay.com/audio/2022/01/26/audio_d0c6ff1cb8.mp3",
+  clock: "https://cdn.pixabay.com/audio/2023/03/19/audio_4960309172.mp3",
+  upbeat: "https://cdn.pixabay.com/audio/2022/03/15/audio_108df09dd5.mp3",
+  battle: "https://cdn.pixabay.com/audio/2023/06/15/audio_27362705.mp3"
+};
+
+function fnChallenge() {
+  startPenalty("EDIT COURSE", "Click and drag to trace a corner edit! (Top-Left 4 squares)", "https://files.catbox.moe/qhbc6p.mp4");
+  
+  arena.innerHTML = `
+    <div class="grid grid-cols-3 gap-2 p-3 bg-white/5 backdrop-blur-md rounded-2xl border border-white/20 shadow-2xl z-20 w-64 h-64 select-none" id="edit-grid" draggable="false">
+      ${[0,1,2,3,4,5,6,7,8].map(i => `<div class="edit-cell bg-blue-400/10 border border-blue-300/30 rounded-lg transition-colors cursor-crosshair" data-idx="${i}" draggable="false"></div>`).join('')}
+    </div>
+    <div class="mt-6 px-5 py-2 bg-black/50 text-white/90 text-xs font-bold rounded-xl backdrop-blur-md z-20 border border-white/10 shadow-lg pointer-events-none uppercase tracking-widest">Release click to confirm edit</div>
+  `;
+  
+  let isDragging = false;
+  let selected = new Set();
+  let cells = document.querySelectorAll('.edit-cell');
+  
+  $('edit-grid').ondragstart = () => false;
+  
+  arena.onmousedown = (e) => { 
+    isDragging = true; 
+    selected.clear(); 
+    cells.forEach(c => c.className = "edit-cell bg-blue-400/10 border border-blue-300/30 rounded-lg transition-colors cursor-crosshair"); 
+    
+    let cell = e.target.closest('.edit-cell');
+    if(cell) {
+        sfx.pop();
+        selected.add(parseInt(cell.dataset.idx));
+        cell.className = "edit-cell bg-blue-400/80 border border-blue-200 rounded-lg transition-colors cursor-crosshair shadow-[0_0_15px_blue]";
+    }
+  };
+  
+  cells.forEach(c => {
+    c.onmouseenter = () => {
+      if (isDragging && !selected.has(parseInt(c.dataset.idx))) {
+        sfx.pop();
+        selected.add(parseInt(c.dataset.idx));
+        c.className = "edit-cell bg-blue-400/80 border border-blue-200 rounded-lg transition-colors cursor-crosshair shadow-[0_0_15px_blue]";
+      }
+    };
+  });
+  
+  arena.parentNode.onmouseup = () => {
+    if (!isDragging) return;
+    isDragging = false;
+    let arr = Array.from(selected).sort((a, b) => a - b);
+    
+    if (arr.join(',') === "0,1,3,4") {
+      resolvePenalty();
+    } else {
+      if (arr.length > 0) {
+        sfx.error(); shakeArena();
+        setTimeout(() => {
+          selected.clear();
+          cells.forEach(c => c.className = "edit-cell bg-blue-400/10 border border-blue-300/30 rounded-lg transition-colors cursor-crosshair");
+        }, 300);
+      }
+    }
+  };
+}
+
+function gdChallenge() {
+  startPenalty("GEOMETRY DASH", "Click or press SPACE to jump over the spike!", "https://files.catbox.moe/tvia5i.mp4", AUDIOS.retro);
+  let cube = document.createElement("div");
+  cube.className = "w-12 h-12 bg-yellow-400/80 border-2 border-yellow-200/80 backdrop-blur-md absolute bottom-4 left-10 transition-transform duration-300 z-20 rounded-md shadow-[0_0_20px_rgba(250,204,21,0.6)] pointer-events-none";
+  let spike = document.createElement("div");
+  spike.className = "w-0 h-0 border-l-[20px] border-r-[20px] border-b-[40px] border-l-transparent border-r-transparent border-b-red-500/80 backdrop-blur-sm absolute bottom-4 right-0 z-20 drop-shadow-[0_0_10px_red] pointer-events-none";
+  arena.append(cube, spike);
+  
+  let spikePos = 100; let isJumping = false;
+  addInterval(() => {
+    spikePos -= 2;
+    spike.style.right = (100 - spikePos) + "%";
+    if (spikePos < 20 && spikePos > 5 && !isJumping) {
+      sfx.error(); spikePos = 100; arena.style.backgroundColor = "rgba(255,0,0,0.3)";
+      addTimeout(() => arena.style.backgroundColor = "", 300);
+    }
+    if(spikePos < -10) resolvePenalty();
+  }, 20);
+
+  const jump = () => {
+    if(!isJumping) {
+      isJumping = true; sfx.jump();
+      cube.style.transform = "translateY(-100px) rotate(90deg)";
+      addTimeout(() => { cube.style.transform = "translateY(0) rotate(180deg)"; isJumping = false; }, 450);
+    }
+  };
+
+  arena.onmousedown = jump;
+  window.onkeydown = (e) => {
+    if (e.code === 'Space') {
+      e.preventDefault();
+      jump();
+    }
+  };
+}
+
+function osuChallenge() {
+  startPenalty("OSU!", "Click the frosted circles before they vanish!", "https://files.catbox.moe/40lp7i.mp4", AUDIOS.upbeat);
+  let circlesToClick = 4;
+  let spawnCircle = () => {
+    if(circlesToClick <= 0) return resolvePenalty();
+    let circle = document.createElement("div");
+    circle.className = "w-16 h-16 bg-pink-500/40 border-2 border-pink-300/80 backdrop-blur-md rounded-full absolute shadow-[0_0_15px_pink] flex items-center justify-center text-white font-black z-20 cursor-crosshair hover:bg-pink-500/60 transition-colors";
+    circle.style.top = Math.random() * 60 + 20 + "%"; circle.style.left = Math.random() * 60 + 20 + "%";
+    let missed = addTimeout(() => {
+      circle.remove(); sfx.error(); circlesToClick = 4; arena.style.backgroundColor = "rgba(255,0,0,0.3)";
+      addTimeout(() => arena.style.backgroundColor = "", 200); spawnCircle();
+    }, 1050);
+    circle.onmousedown = function(e) { e.stopPropagation(); sfx.pop(); clearTimeout(missed); this.remove(); circlesToClick--; spawnCircle(); };
+    arena.appendChild(circle);
+  };
+  spawnCircle();
+}
+
+function whackChallenge() {
+  startPenalty("WHACK-A-MOLE", "Whack 5 moles before they hide!", "https://media.tenor.com/IgF91dhJWloAAAAM/family-guy-chris-griffin.gif", AUDIOS.upbeat);
+  
+  // Create a 3x3 grid with relative containers to hold the mole and its hit graphic
+  arena.innerHTML = `
+    <div class="absolute top-4 right-4 text-2xl font-black text-white/90 drop-shadow-md z-20 bg-black/50 px-3 py-1 rounded-lg border border-white/20">Left: <span id="mole-count">5</span></div>
+    <div class="grid grid-cols-3 gap-4 w-64 h-64 z-20 mt-4" id="mole-grid">
+      ${[0,1,2,3,4,5,6,7,8].map(i => `
+        <div class="relative w-full h-full flex justify-center items-end">
+          <div class="w-full h-full bg-amber-900/80 border-4 border-amber-950 rounded-full overflow-hidden shadow-inner absolute inset-0 z-10 flex justify-center items-end pb-2">
+            <div id="mole-${i}" class="cursor-crosshair transform translate-y-[120%] transition-transform duration-200 text-5xl select-none" draggable="false">🐹</div>
+          </div>
+          <div id="hit-fx-${i}" class="absolute z-20 pointer-events-none text-5xl opacity-0 transform scale-50 transition-all duration-300 mb-4">💥</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+  
+  let count = 5;
+  let spawnMole = () => {
+     if(count <= 0) return resolvePenalty();
+     
+     let idx = Math.floor(Math.random() * 9);
+     let mole = $(`mole-${idx}`);
+     
+     // Reset mole face and bring it up
+     mole.innerText = "🐹"; 
+     mole.style.transform = "translateY(0%) scaleY(1)"; 
+     
+     let hide = addTimeout(() => {
+        mole.style.transform = "translateY(120%) scaleY(1)";
+        mole.onmousedown = null;
+        sfx.error(); shakeArena();
+        addTimeout(spawnMole, 400);
+     }, 800);
+
+     mole.onmousedown = (e) => {
+        e.stopPropagation();
+        clearTimeout(hide);
+        sfx.pop();
+        
+        // Trigger Explosion Graphic
+        let fx = $(`hit-fx-${idx}`);
+        fx.style.opacity = "1";
+        fx.style.transform = "scale(1.5) translateY(-20px)";
+
+        // Squish the mole and change face
+        mole.innerText = "😵";
+        mole.style.transform = "translateY(20%) scaleY(0.6)"; 
+
+        // Fade out explosion after short time
+        setTimeout(() => {
+            fx.style.opacity = "0";
+            fx.style.transform = "scale(0.5) translateY(0)";
+        }, 300);
+
+        // Slide the squished mole back down
+        setTimeout(() => {
+            mole.style.transform = "translateY(120%) scaleY(1)";
+        }, 200);
+
+        mole.onmousedown = null;
+        count--;
+        $('mole-count').innerText = count;
+        
+        if(count <= 0) addTimeout(resolvePenalty, 500); // slight delay to enjoy the hit
+        else addTimeout(spawnMole, 400);
+     };
+  };
+  addTimeout(spawnMole, 500);
+}
+
+function simonChallenge() {
+  startPenalty("SIMON SAYS", "Repeat the pattern exactly.", "https://files.catbox.moe/gt90hz.mp4", AUDIOS.retro);
+  arena.innerHTML = `<div class="grid grid-cols-2 gap-4 w-48 h-48 z-20 mt-4">
+    <div id="c-0" class="bg-red-500/30 border border-red-400/50 backdrop-blur-md rounded-tl-full cursor-pointer transition-colors shadow-lg"></div>
+    <div id="c-1" class="bg-blue-500/30 border border-blue-400/50 backdrop-blur-md rounded-tr-full cursor-pointer transition-colors shadow-lg"></div>
+    <div id="c-2" class="bg-yellow-500/30 border border-yellow-400/50 backdrop-blur-md rounded-bl-full cursor-pointer transition-colors shadow-lg"></div>
+    <div id="c-3" class="bg-green-500/30 border border-green-400/50 backdrop-blur-md rounded-br-full cursor-pointer transition-colors shadow-lg"></div>
+  </div>`;
+  let sequence = [Math.floor(Math.random()*4), Math.floor(Math.random()*4), Math.floor(Math.random()*4)];
+  let playerStep = 0;
+  let playSeq = async () => { for(let i of sequence) { await new Promise(r => addTimeout(r, 300)); let el = $(`c-${i}`); sfx.beep(); el.style.backgroundColor = "rgba(255,255,255,0.8)"; await new Promise(r => addTimeout(r, 300)); el.style.backgroundColor = ""; } };
+  setTimeout(playSeq, 500);
+  for(let i=0; i<4; i++) {
+    $(`c-${i}`).onmousedown = function() {
+      sfx.beep(); this.style.backgroundColor = "rgba(255,255,255,0.8)"; addTimeout(() => this.style.backgroundColor = "", 200);
+      if(i === sequence[playerStep]) { playerStep++; if(playerStep === sequence.length) addTimeout(resolvePenalty, 400); } 
+      else { sfx.error(); playerStep = 0; shakeArena(); setTimeout(playSeq, 800); }
+    };
+  }
+}
+
+function hackerChallenge() {
+  startPenalty("TERMINAL OVERRIDE", "Type the exact override code before time runs out!", "https://files.catbox.moe/507rp6.mp4", AUDIOS.cyber);
+  const codes = ["SUDO RM -RF", "DROP TABLE", "INIT_OVERRIDE", "CHMOD 777", "EXECUTE_66"];
+  const target = codes[Math.floor(Math.random() * codes.length)];
+  
+  arena.innerHTML = `
+    <div class="flex flex-col items-center w-full px-8 z-20">
+      <div id="target-code" class="text-4xl font-mono text-green-400 font-bold mb-6 tracking-widest bg-black/50 border border-white/20 backdrop-blur-md px-6 py-2 rounded-xl shadow-lg pointer-events-none">${target}</div>
+      <input type="text" id="hack-input" class="w-full bg-black/40 border border-green-400/50 backdrop-blur-md text-green-300 font-mono text-2xl text-center p-3 rounded-lg outline-none focus:border-green-400 uppercase shadow-inner z-20 transition-colors" autocomplete="off" placeholder="TYPE HERE">
+      <div class="w-full h-2 bg-white/10 border border-white/20 mt-4 rounded-full overflow-hidden z-10 backdrop-blur-md pointer-events-none"><div id="hack-bar" class="h-full bg-red-500 w-full transition-all"></div></div>
+    </div>
+  `;
+  
+  let input = $('hack-input');
+  let bar = $('hack-bar');
+  let timeLeft = 100;
+  
+  setTimeout(() => input.focus(), 100);
+  
+  input.oninput = () => {
+    sfx.beep();
+    if (input.value.toUpperCase() === target) {
+      input.disabled = true;
+      resolvePenalty();
+    }
+  };
+
+  addInterval(() => {
+    timeLeft -= 3.0; // Hard Difficulty
+    bar.style.width = Math.max(0, timeLeft) + "%";
+    if (timeLeft <= 0) {
+      sfx.error(); shakeArena();
+      hackerChallenge();
+    }
+  }, 100);
+}
+
+function aimChallenge() {
+  startPenalty("AIM LAB", "Destroy the 5 moving targets.", "https://files.catbox.moe/sijlj4.mp4", AUDIOS.cyber);
+  let count = 5;
+  
+  for(let i = 0; i < 5; i++) {
+    let t = document.createElement('div');
+    t.className = "w-8 h-8 bg-red-500/50 border border-red-300 backdrop-blur-md rounded-full absolute cursor-crosshair z-20 shadow-[0_0_15px_rgba(255,0,0,0.5)] hover:bg-red-500/80 transition-colors";
+    t.style.top = Math.random() * 70 + 10 + "%"; 
+    t.style.left = Math.random() * 70 + 10 + "%";
+    t.style.transition = "top 0.6s ease-in-out, left 0.6s ease-in-out, background-color 0.2s"; 
+    
+    addInterval(() => {
+      let currentTop = parseFloat(t.style.top) || 50;
+      let currentLeft = parseFloat(t.style.left) || 50;
+      t.style.top = Math.max(10, Math.min(80, currentTop + (Math.random() * 20 - 10))) + "%";
+      t.style.left = Math.max(10, Math.min(80, currentLeft + (Math.random() * 20 - 10))) + "%";
+    }, 600 + Math.random() * 400);
+
+    t.onmousedown = function(e) { 
+      e.stopPropagation();
+      sfx.pop(); this.remove(); 
+      if(--count <= 0) resolvePenalty(); 
+    };
+    arena.appendChild(t);
+  }
+}
+
+function timerChallenge() {
+  startPenalty("STOPWATCH", "Stop EXACTLY between 2.0 and 2.5s", "https://media.giphy.com/media/tXL4FHPSnVJ0A/giphy.mp4", AUDIOS.clock);
+  let t = 0;
+  let stopped = false;
+  
+  arena.innerHTML = `<div id="sw-t" class="text-6xl font-mono mb-6 text-white bg-white/10 backdrop-blur-md px-8 py-3 rounded-2xl z-20 shadow-lg border border-white/20 pointer-events-none">0.0</div>
+  <button id="sw-b" class="bg-white/20 hover:bg-white/30 backdrop-blur-md px-10 py-4 rounded-xl text-white font-bold btn-3d z-20 border border-white/40 tracking-widest disabled:opacity-50">STOP (SPACE)</button>`;
+  
+  let int = addInterval(() => { t += 0.1; $('sw-t').innerText = t.toFixed(1); }, 100);
+  
+  const stopTimer = () => {
+    if(stopped) return;
+    stopped = true;
+    $('sw-b').disabled = true;
+    clearInterval(int);
+    if(t >= 2.0 && t <= 2.5) resolvePenalty();
+    else { sfx.error(); shakeArena(); setTimeout(timerChallenge, 1000); }
+  };
+
+  $('sw-b').onmousedown = stopTimer;
+  
+  window.onkeydown = (e) => {
+    if (e.code === 'Space') {
+      e.preventDefault();
+      stopTimer();
+    }
+  };
+}
+
+function pokeChallenge() {
+  startPenalty("WILD ENCOUNTER", "Defeat the wild Charizard!", null, "https://files.catbox.moe/7tzi3q.mp3");
+  
+  $('arena-bg').innerHTML = `
+    <div class="absolute inset-0 bg-gradient-to-b from-blue-300 via-blue-200 to-green-500 z-0 rounded-2xl"></div>
+    <div class="absolute bottom-4 left-4 w-48 h-16 bg-green-600 rounded-[100%] border-b-4 border-green-700 shadow-xl z-0"></div>
+    <div class="absolute top-12 right-6 w-32 h-12 bg-green-600 rounded-[100%] border-b-4 border-green-700 shadow-xl z-0"></div>
+  `;
+
+  arena.innerHTML = `
+    <div class="flex flex-col w-full h-full justify-between p-3 z-20 relative">
+      <div class="flex justify-between items-start w-full px-2">
+        <div class="w-5/12 bg-black/60 border border-white/20 backdrop-blur-md p-2 rounded-lg shadow-lg pointer-events-none">
+          <p class="text-[11px] font-bold tracking-widest text-white/90 mb-1">CHARIZARD Lv.50</p>
+          <div class="w-full bg-white/10 h-2.5 rounded-full overflow-hidden border border-white/20"><div id="pk-ehp" class="bg-green-400 h-full rounded-full transition-all w-full shadow-[0_0_10px_green]"></div></div>
+        </div>
+        <img id="pk-enemy" src="https://play.pokemonshowdown.com/sprites/gen5ani/charizard.gif" class="w-24 h-24 object-contain transform -scale-x-100 pointer-events-none absolute top-2 right-10 pixelated" />
+      </div>
+      
+      <div class="flex justify-between items-end w-full px-2 mt-[-10px]">
+        <img id="pk-player" src="https://play.pokemonshowdown.com/sprites/gen5ani-back/pikachu.gif" class="w-28 h-28 object-contain pointer-events-none absolute bottom-24 left-14 pixelated" />
+        
+        <div class="w-5/12 bg-black/60 border border-white/20 backdrop-blur-md p-2 rounded-lg shadow-lg pointer-events-none absolute bottom-24 right-4">
+          <p class="text-[11px] font-bold tracking-widest text-white/90 mb-1">PIKACHU Lv.50</p>
+          <div class="w-full bg-white/10 h-2.5 rounded-full overflow-hidden border border-white/20"><div id="pk-php" class="bg-green-400 h-full rounded-full transition-all w-full shadow-[0_0_10px_green]"></div></div>
+          <p id="pk-hpnum" class="text-[10px] font-mono text-white/80 mt-1 text-right font-bold">100/100</p>
+        </div>
+      </div>
+      
+      <div id="pk-ctrl" class="grid grid-cols-2 gap-2 h-20 w-full mt-2 p-2 bg-white/10 backdrop-blur-md rounded-xl border border-white/20 shadow-xl z-30">
+        <button onclick="handleAttack(25, 35)" class="bg-yellow-500/80 hover:bg-yellow-400 backdrop-blur-md rounded-lg font-black text-white/90 shadow-md transition-colors tracking-wide text-xs">THUNDERBOLT</button>
+        <button onclick="handleAttack(10, 15)" class="bg-gray-400/80 hover:bg-gray-300 backdrop-blur-md rounded-lg font-black text-white/90 shadow-md transition-colors tracking-wide text-xs">QUICK ATTACK</button>
+        <button onclick="handleAttack(15, 25)" class="bg-slate-500/80 hover:bg-slate-400 backdrop-blur-md rounded-lg font-black text-white/90 shadow-md transition-colors tracking-wide text-xs">IRON TAIL</button>
+        <button onclick="handleHeal(30, 40)" class="bg-green-500/80 hover:bg-green-400 backdrop-blur-md rounded-lg font-black text-white/90 shadow-md transition-colors tracking-wide text-xs">POTION</button>
+      </div>
+    </div>
+  `;
+
+  let ehp = 100; let php = 100; let playerTurn = true;
+  
+  let updateHp = () => {
+    $('pk-ehp').style.width = Math.max(0, ehp) + "%"; $('pk-php').style.width = Math.max(0, php) + "%"; $('pk-hpnum').innerText = `${Math.max(0, php)}/100`;
+    $('pk-ehp').style.backgroundColor = ehp > 50 ? "#4ade80" : ehp > 20 ? "#facc15" : "#f87171";
+    $('pk-php').style.backgroundColor = php > 50 ? "#4ade80" : php > 20 ? "#facc15" : "#f87171";
+  };
+
+  let enemyAttack = () => {
+    if(!overlay.classList.contains('flex')) return;
+    sfx.beep(); 
+    $('pk-player').style.opacity = "0.5"; shakeArena();
+    addTimeout(() => { $('pk-player').style.opacity = "1"; }, 150);
+    
+    let dmg = 15 + Math.floor(Math.random()*15); 
+    php -= dmg; updateHp();
+    
+    if(php <= 0) {
+      sfx.error();
+      addTimeout(() => { $('pk-player').style.transform = "translateY(100px) scale(0)"; }, 200);
+      addTimeout(() => { pokeChallenge(); }, 1000); 
+    } else {
+      playerTurn = true; $('pk-ctrl').style.pointerEvents = "auto"; $('pk-ctrl').style.opacity = "1";
+    }
+  };
+
+  window.handleAttack = (minDmg, maxDmg) => {
+    if(!playerTurn) return; playerTurn = false; $('pk-ctrl').style.pointerEvents = "none"; $('pk-ctrl').style.opacity = "0.5";
+    sfx.pop(); 
+    $('pk-player').style.transform = "translateY(-20px) translateX(30px)"; addTimeout(() => $('pk-player').style.transform = "translateY(0) translateX(0)", 150);
+    $('pk-enemy').style.opacity = "0.5"; addTimeout(() => $('pk-enemy').style.opacity = "1", 150);
+    
+    let dmg = minDmg + Math.floor(Math.random()*(maxDmg - minDmg + 1));
+    ehp -= dmg; updateHp();
+    
+    if(ehp <= 0) {
+      sfx.success(); 
+      addTimeout(() => { $('pk-enemy').style.transform = "translateY(100px) scale(0)"; }, 200);
+      addTimeout(resolvePenalty, 1000);
+    } else { addTimeout(enemyAttack, 1000); }
+  };
+  
+  window.handleHeal = (minHl, maxHl) => {
+    if(!playerTurn) return; playerTurn = false; $('pk-ctrl').style.pointerEvents = "none"; $('pk-ctrl').style.opacity = "0.5";
+    sfx.beep(); 
+    $('pk-player').style.transform = "scale(1.2)"; addTimeout(() => $('pk-player').style.transform = "scale(1)", 150);
+    php = Math.min(100, php + minHl + Math.floor(Math.random()*(maxHl - minHl + 1))); updateHp();
+    addTimeout(enemyAttack, 1200);
+  };
+}
+
+function ufoChallenge() {
+  startPenalty("UFO TRACKER", "Keep your mouse on the UFO until the bar fills!", "https://files.catbox.moe/4as9d2.mp4", AUDIOS.cyber);
+  arena.innerHTML = `<div id="ufo" class="text-5xl absolute cursor-crosshair z-20 transition-all duration-300 drop-shadow-lg hover:scale-110">🛸</div>
+  <div class="absolute bottom-6 left-6 right-6 h-6 bg-white/10 backdrop-blur-md rounded-full overflow-hidden z-20 border border-white/20 shadow-inner pointer-events-none"><div id="ufo-bar" class="h-full bg-green-400/80 w-0 transition-all shadow-[0_0_15px_green]"></div></div>`;
+  let ufo = $('ufo'); let bar = $('ufo-bar'); let progress = 0; let isHovering = false;
+  ufo.onmouseenter = () => isHovering = true; ufo.onmouseleave = () => isHovering = false;
+  addInterval(() => { ufo.style.top = Math.random() * 60 + 10 + "%"; ufo.style.left = Math.random() * 80 + 10 + "%"; }, 700);
+  addInterval(() => { if (isHovering) progress += 5; else progress = Math.max(0, progress - 2); bar.style.width = progress + "%"; if (progress >= 100) resolvePenalty(); }, 50);
+}
+
+function rhythmChallenge() {
+  startPenalty("VIBE CHECK", "Hit SPACEBAR when the cursor is in the GREEN zone!", "https://media.giphy.com/media/blSTtZehjAZ8I/giphy.mp4", AUDIOS.upbeat);
+  arena.innerHTML = `
+    <div class="w-5/6 h-12 border border-white/30 backdrop-blur-md rounded-full relative overflow-hidden bg-white/5 flex shadow-xl z-20 pointer-events-none">
+      <div class="w-1/3 h-full bg-red-500/30"></div>
+      <div id="sweet-spot" class="w-1/3 h-full bg-green-400/50 shadow-[inset_0_0_20px_rgba(74,222,128,0.5)] border-x border-white/20"></div>
+      <div class="w-1/3 h-full bg-red-500/30"></div>
+      <div id="rhythm-cursor" class="absolute top-0 bottom-0 w-5 bg-white shadow-[0_0_20px_white] z-30 transition-transform rounded-full"></div>
+    </div>
+    <div class="mt-8 text-white/90 font-bold uppercase tracking-widest z-20 bg-black/40 backdrop-blur-md px-6 py-3 rounded-xl border border-white/20 shadow-lg pointer-events-none">Press [SPACE]</div>
+  `;
+  
+  let cursor = $('rhythm-cursor');
+  let pos = 0; let direction = 1; let speed = 4;
+  
+  addInterval(() => {
+    pos += speed * direction;
+    if (pos >= 96 || pos <= 0) direction *= -1; 
+    cursor.style.left = pos + "%";
+  }, 20);
+
+  window.onkeydown = (e) => {
+    if (e.code === 'Space') {
+      e.preventDefault();
+      if (pos >= 32 && pos <= 64) resolvePenalty();
+      else { sfx.error(); shakeArena(); }
+    }
+  };
+}
+
+function defuseChallenge() {
+  startPenalty("DEFUSAL", "Cut the wires in order: BLUE, GREEN, RED.", "https://media.giphy.com/media/3oKIPwoeGErMmaI43S/giphy.mp4", AUDIOS.clock);
+  arena.innerHTML = `
+    <div class="flex gap-10 justify-center items-center w-full h-full px-8 z-20">
+      <div id="w-red" class="w-8 h-48 bg-red-500/50 border border-red-300/80 backdrop-blur-md cursor-pointer rounded-xl hover:scale-105 transition-all btn-3d shadow-[0_0_20px_rgba(255,0,0,0.3)]"></div>
+      <div id="w-green" class="w-8 h-48 bg-green-500/50 border border-green-300/80 backdrop-blur-md cursor-pointer rounded-xl hover:scale-105 transition-all btn-3d shadow-[0_0_20px_rgba(0,255,0,0.3)]"></div>
+      <div id="w-blue" class="w-8 h-48 bg-blue-500/50 border border-blue-300/80 backdrop-blur-md cursor-pointer rounded-xl hover:scale-105 transition-all btn-3d shadow-[0_0_20px_rgba(0,0,255,0.3)]"></div>
+    </div>
+  `;
+  
+  let step = 0;
+  const sequence = ['w-blue', 'w-green', 'w-red'];
+  const wires = ['w-red', 'w-green', 'w-blue'];
+  
+  wires.forEach(id => {
+    let wire = $(id);
+    wire.onmousedown = () => {
+      sfx.pop();
+      if (id === sequence[step]) {
+        wire.style.opacity = "0.2"; wire.style.pointerEvents = "none"; step++;
+        if (step === 3) addTimeout(resolvePenalty, 300);
+      } else {
+        sfx.scare(); 
+        arena.insertAdjacentHTML('beforeend', `<div class="bg-red-500/40 w-full h-full absolute inset-0 z-50 animate-pulse backdrop-blur-sm pointer-events-none"></div>`);
+        shakeArena(); addTimeout(defuseChallenge, 800); 
+      }
+    };
+  });
+}
+
+function mazeChallenge() {
+  startPenalty("STEADY HAND", "Guide the yellow block to the finish without touching the red zone!", "https://media2.giphy.com/media/v1.Y2lkPTZjMDliOTUyb3F0YWRtbXAxbTlvY2ZiNWQ1ZTE1a3pxYTcyazR4NWd4M2h4NGU0aCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/3og0INAY5MLmEBubyU/giphy-downsized.gif", AUDIOS.retro);
+  
+  arena.innerHTML = `
+    <div id="maze-wall-bg" class="absolute inset-0 bg-red-500/20 z-10 w-full h-full transition-colors rounded-2xl"></div>
+    
+    <div class="safe-path absolute bg-black/70 z-20 border-t border-l border-r border-white/20" style="top: 20%; left: 10%; right: 10%; height: 20%;">
+      <div class="absolute bottom-0 left-0 w-[75%] h-[1px] bg-white/20"></div>
+    </div>
+    <div class="safe-path absolute bg-black/70 z-20 border-l border-r border-white/20" style="top: 40%; right: 10%; width: 20%; height: 20%;"></div>
+    <div class="safe-path absolute bg-black/70 z-20 border-b border-l border-r border-white/20" style="bottom: 20%; left: 10%; right: 10%; height: 20%;">
+      <div class="absolute top-0 left-0 w-[75%] h-[1px] bg-white/20"></div>
+    </div>
+    
+    <div id="start-zone" class="absolute z-30 bg-blue-500/80 border border-white/40 backdrop-blur-md flex items-center justify-center text-xs font-bold text-white cursor-crosshair shadow-[0_0_15px_blue] rounded-md transition-colors" style="top: 20%; left: 10%; width: 15%; height: 20%;">START</div>
+    <div id="end-zone" class="absolute z-30 bg-green-500/80 border border-white/40 backdrop-blur-md flex items-center justify-center text-xs font-bold text-white cursor-crosshair shadow-[0_0_15px_green] rounded-md" style="bottom: 20%; left: 10%; width: 15%; height: 20%;">FINISH</div>
+    
+    <div id="maze-cursor" class="w-6 h-6 bg-yellow-400/90 backdrop-blur-xl border border-yellow-200 absolute pointer-events-none hidden rounded-sm shadow-[0_0_15px_yellow] z-40 transform -translate-x-1/2 -translate-y-1/2 transition-none"></div>
+  `;
+  
+  let isTracking = false;
+  let bg = $('maze-wall-bg');
+  let start = $('start-zone');
+  let end = $('end-zone');
+  let cursorBlock = $('maze-cursor');
+  
+  start.onmouseenter = () => { 
+    sfx.beep(); 
+    isTracking = true; 
+    start.style.backgroundColor = "rgba(59,130,246,1)"; 
+    cursorBlock.classList.remove('hidden');
+  };
+  
+  arena.onmousemove = (e) => {
+    if (isTracking) {
+      let rect = arena.getBoundingClientRect();
+      cursorBlock.style.left = (e.clientX - rect.left) + 'px';
+      cursorBlock.style.top = (e.clientY - rect.top) + 'px';
+      
+      if (e.target === bg || e.target.id === 'maze-wall-bg' || e.target === arena) {
+        sfx.error(); 
+        isTracking = false; 
+        cursorBlock.classList.add('hidden');
+        start.style.backgroundColor = "rgba(59,130,246,0.8)"; 
+        bg.classList.add("bg-red-500/60"); setTimeout(() => bg.classList.remove("bg-red-500/60"), 200);
+        shakeArena();
+      }
+    }
+  };
+
+  arena.onmouseleave = () => {
+    if (isTracking) {
+      sfx.error(); 
+      isTracking = false; 
+      cursorBlock.classList.add('hidden');
+      start.style.backgroundColor = "rgba(59,130,246,0.8)"; 
+      shakeArena();
+    }
+  };
+  
+  end.onmouseenter = () => { if (isTracking) resolvePenalty(); };
+}
+
+function holdChallenge() {
+  startPenalty("HOLD STEADY", "Click and hold the button for 3 seconds.", "https://media.giphy.com/media/3o7TKMt1VVNkHV2PaE/giphy.mp4", AUDIOS.upbeat);
+  arena.innerHTML = `<button id="hb" class="bg-white/20 hover:bg-white/30 backdrop-blur-md px-12 py-8 rounded-3xl text-white font-bold text-3xl btn-3d select-none z-20 border border-white/40 shadow-xl tracking-widest transition-colors">HOLD ME</button>
+  <div class="w-2/3 h-4 bg-black/40 border border-white/10 rounded-full overflow-hidden mt-6 absolute bottom-8 z-20 backdrop-blur-sm pointer-events-none"><div id="hb-bar" class="w-0 h-full bg-green-400/80 transition-all duration-100 ease-linear shadow-[0_0_10px_green]"></div></div>`;
+  let t = 0; let int; let b = $('hb'); let bar = $('hb-bar');
+  
+  b.onmousedown = () => { 
+    if(int) clearInterval(int);
+    sfx.beep(); 
+    int = addInterval(()=>{ t+=100; bar.style.width = (t/3000)*100+"%"; if(t>=3000) resolvePenalty(); }, 100); 
+  };
+  b.onmouseup = b.onmouseleave = () => { clearInterval(int); t=0; bar.style.width = "0"; };
+}
+
+function findChallenge() {
+  startPenalty("IMPOSTER", "Click the odd one out.", "https://media.giphy.com/media/l36kU80xPf0ojG0Erg/giphy.mp4", AUDIOS.scary);
+  arena.innerHTML = `<div class="flex flex-wrap gap-3 p-6 justify-center items-center h-full w-full z-20 bg-black/20 backdrop-blur-sm" id="fi"></div>`;
+  let fi = $('fi');
+  let icons = ["😀","😀","😀","😀","😀","😀","😀","😀","😀","😀","😀","😀","😀","😀","😀","😀","😀","😀","😀","😀","😀","😀","😀","😅"];
+  icons.sort(() => Math.random() - 0.5);
+  icons.forEach(i => {
+    let el = document.createElement('div'); el.className = "text-4xl cursor-pointer hover:scale-110 transition-transform drop-shadow-lg bg-white/10 backdrop-blur-md rounded-xl p-2 border border-white/20 shadow-md"; el.innerText = i;
+    el.onmousedown = () => { if(i === "😅") resolvePenalty(); else { sfx.error(); shakeArena(); }}; fi.appendChild(el);
+  });
+}
+
+function respectChallenge() {
+  startPenalty("PAY RESPECTS", "Mash the 'F' key 15 times fast!", "https://media.giphy.com/media/hStvd5LiWCFzYNyxR4/giphy.mp4", AUDIOS.retro);
+  let hp = 15;
+  arena.innerHTML = `
+    <div class="flex flex-col items-center z-20 bg-black/50 p-8 rounded-3xl border border-white/20 backdrop-blur-xl shadow-2xl pointer-events-none">
+      <div class="text-7xl font-bold text-white/70 bg-white/10 border-4 border-white/20 w-32 h-32 flex items-center justify-center rounded-2xl shadow-inner mb-6 transition-colors backdrop-blur-md" id="f-key">F</div>
+      <div class="w-64 h-4 bg-white/10 rounded-full overflow-hidden border border-white/20 shadow-inner">
+        <div id="f-bar" class="h-full bg-blue-400/80 w-0 transition-all shadow-[0_0_10px_blue]"></div>
+      </div>
+    </div>
+  `;
+  
+  let keyUI = $('f-key');
+  let bar = $('f-bar');
+  
+  window.onkeydown = (e) => {
+    if (e.key.toLowerCase() === 'f') {
+      sfx.pop(); hp--;
+      bar.style.width = ((15 - hp) / 15) * 100 + "%";
+      keyUI.classList.add("bg-blue-500/50", "text-white");
+      setTimeout(() => keyUI.classList.remove("bg-blue-500/50", "text-white"), 50);
+      
+      if (hp <= 0) { window.onkeydown = null; resolvePenalty(); }
+    } else { sfx.error(); }
+  };
+}
+
+function freezeChallenge() {
+  startPenalty("FREEZE", "Do not move your mouse! (Timer DOUBLES if you move)", "https://files.catbox.moe/qq7rfu.mp4", AUDIOS.clock);
+  arena.innerHTML = `<div id="fz-t" class="text-7xl font-mono font-bold text-cyan-300 z-20 drop-shadow-[0_0_20px_rgba(34,211,238,0.8)] bg-black/50 px-10 py-6 rounded-3xl border border-cyan-400/30 backdrop-blur-md shadow-2xl pointer-events-none">3.0</div>`;
+  
+  // Base timer value that doubles upon failure
+  let targetTime = 3.0; 
+  let t = targetTime; 
+  let int = null;
+  
+  let armed = false;
+  addTimeout(() => armed = true, 500);
+
+  window.onmousemove = (e) => {
+    if (!armed || !overlay.classList.contains('flex')) return;
+    
+    if (Math.abs(e.movementX) > 0 || Math.abs(e.movementY) > 0) {
+      sfx.error(); 
+      clearInterval(int); int = null; 
+      
+      // Double the required time!
+      targetTime *= 2; 
+      t = targetTime; 
+      
+      $('fz-t').innerText = t.toFixed(1); 
+      arena.style.backgroundColor = "rgba(255,0,0,0.4)"; 
+      addTimeout(()=>arena.style.backgroundColor="", 200); 
+      
+      armed = false;
+      addTimeout(() => armed = true, 500);
+      int = addInterval(tick, 100);
+    }
+  };
+  
+  const tick = () => { 
+    t -= 0.1; 
+    $('fz-t').innerText = Math.max(0, t).toFixed(1); 
+    if(t <= 0) resolvePenalty(); 
+  };
+  
+  int = addInterval(tick, 100);
+}
+
+function popupChallenge() {
+  startPenalty("ADWARE VIRUS", "Close all 5 error popups before time runs out!", "https://www.washingtonpost.com/news/the-intersect/wp-content/uploads/sites/32/2016/02/crash.gif", AUDIOS.scary);
+  let popupsToClose = 5;
+  
+  arena.innerHTML = `
+    <div id="popup-container" class="w-full h-full relative z-20"></div>
+    <div class="absolute bottom-4 left-1/2 -translate-x-1/2 w-3/4 h-3 bg-white/10 backdrop-blur-md border border-white/20 rounded-full overflow-hidden z-30 pointer-events-none">
+      <div id="popup-bar" class="h-full bg-red-500 transition-all w-full shadow-[0_0_10px_red]"></div>
+    </div>`;
+    
+  let container = $('popup-container');
+  
+  for(let i=0; i<5; i++) {
+     let p = document.createElement('div');
+     p.className = "absolute bg-white/10 backdrop-blur-xl border border-white/30 rounded-lg shadow-2xl flex flex-col overflow-hidden";
+     p.style.width = "160px";
+     p.style.height = "100px";
+     p.style.top = Math.random() * 50 + 10 + "%";
+     p.style.left = Math.random() * 60 + 10 + "%";
+     
+     p.innerHTML = `
+        <div class="bg-red-500/80 px-2 py-1 flex justify-between items-center border-b border-red-300/50">
+           <span class="text-[10px] font-bold text-white tracking-wider">CRITICAL ERROR</span>
+           <button class="close-btn text-white hover:text-red-200 font-bold text-xs bg-red-700/50 rounded-full w-4 h-4 flex items-center justify-center leading-none transition-colors">&times;</button>
+        </div>
+        <div class="p-2 flex-1 flex flex-col items-center justify-center text-xs text-center text-white/90 font-semibold drop-shadow-md pointer-events-none">
+           <span>SYSTEM CORRUPTED</span>
+           <span class="text-[10px] text-white/60 font-normal mt-1">Code: 0x000F8</span>
+        </div>
+     `;
+     
+     let closeBtn = p.querySelector('.close-btn');
+     closeBtn.onmousedown = (e) => {
+         e.stopPropagation();
+         sfx.pop();
+         p.remove();
+         popupsToClose--;
+         if(popupsToClose <= 0) resolvePenalty();
+     };
+     container.appendChild(p);
+  }
+  
+  let timeLeft = 40;
+  addInterval(() => {
+     timeLeft--;
+     $('popup-bar').style.width = (timeLeft/40)*100 + "%";
+     if(timeLeft <= 0 && popupsToClose > 0) {
+        sfx.error(); shakeArena(); popupChallenge();
+     }
+  }, 100);
+}
+
+function clickArenaChallenge() {
+  startPenalty("RAGE CLICK", "Click ANYWHERE in the arena 20 times fast!", "https://media.giphy.com/media/3o7abKhOpu0NwenH3O/giphy.mp4", AUDIOS.battle);
+  let c = 20; arena.innerHTML = `<div id="ca" class="text-9xl font-black text-white/90 z-20 pointer-events-none drop-shadow-[0_0_20px_rgba(255,255,255,0.5)] bg-white/10 backdrop-blur-md border border-white/20 px-8 py-4 rounded-3xl shadow-xl pointer-events-none">${c}</div>`;
+  arena.onmousedown = () => { sfx.pop(); c--; $('ca').innerText = c; if(c<=0) resolvePenalty(); };
+}
+
+function memoryChallenge() {
+  startPenalty("MEMORY", "Find the matching pair (Click 2).", "https://media.giphy.com/media/d3mlE7uhX8KFgEmY/giphy.mp4", AUDIOS.cyber);
+  arena.innerHTML = `<div class="grid grid-cols-4 gap-3 w-full h-full p-6 z-20 bg-black/20 backdrop-blur-sm" id="mm"></div>`;
+  let mm = $('mm'); let cards = ["🍎","🍎","🍌","🍉","🍇","🍓","🍒","🍑"];
+  cards.sort(() => Math.random() - 0.5); 
+  
+  let picked = [];
+  let isLocked = false; 
+  
+  cards.forEach((c) => {
+    let div = document.createElement('div'); div.className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl flex items-center justify-center text-5xl cursor-pointer hover:bg-white/20 transition-all shadow-md select-none text-transparent";
+    div.onmousedown = function(e) {
+      e.stopPropagation();
+      if(picked.length < 2 && this.className.includes("text-transparent") && !isLocked) {
+        sfx.pop(); 
+        this.classList.remove("text-transparent");
+        this.innerText = c; 
+        picked.push(this);
+        
+        if(picked.length === 2) { 
+          isLocked = true;
+          if(picked[0].innerText === picked[1].innerText) {
+            addTimeout(resolvePenalty, 500); 
+          } else { 
+            sfx.error(); shakeArena(); 
+            addTimeout(() => { 
+              picked[0].innerText=""; picked[0].classList.add("text-transparent");
+              picked[1].innerText=""; picked[1].classList.add("text-transparent");
+              picked=[]; isLocked=false; 
+            }, 600); 
+          } 
+        }
+      }
+    }; mm.appendChild(div);
+  });
+}
+
+// Master Pool of 20 Games (Swapped FNAF for Whack-A-Mole)
+const ALL_PENALTIES = [
+  fnChallenge, gdChallenge, osuChallenge, whackChallenge, simonChallenge, 
+  respectChallenge, aimChallenge, rhythmChallenge, pokeChallenge, ufoChallenge, 
+  defuseChallenge, mazeChallenge, holdChallenge, findChallenge, hackerChallenge, 
+  freezeChallenge, popupChallenge, clickArenaChallenge, memoryChallenge, timerChallenge
+];
+let availablePenalties = [...ALL_PENALTIES];
+
+function triggerRandomPenalty() {
+  if (availablePenalties.length === 0) availablePenalties = [...ALL_PENALTIES];
+  let index = Math.floor(Math.random() * availablePenalties.length);
+  availablePenalties.splice(index, 1)[0]();
+}
+
+// --- The 25 Rules ---
+const RULE_POOL = [
+  { rule: "Include a brainrot term (skibidi, rizz, gyatt, sigma)", test: pw => /(skibidi|rizz|gyatt|sigma)/i.test(pw) },
+  { rule: "Name the pop artist behind the 'Brat' summer trend (First name)", test: pw => /charli/i.test(pw) },
+  { rule: "Name the anime with the 'Nah, I'd win' meme (Acronym)", test: pw => /jjk/i.test(pw) },
+  { rule: "Who plays Deadpool? (First name)", test: pw => /ryan/i.test(pw) },
+  { rule: "Name the YouTuber famous for massive giveaways", test: pw => /mrbeast/i.test(pw) },
+  { rule: "What animal is the classic 'Doge' meme?", test: pw => /(doge|shiba|dog)/i.test(pw) },
+  { rule: "Who created Minecraft? (Nickname)", test: pw => /notch/i.test(pw) },
+  { rule: "What is the premium currency in Roblox?", test: pw => /robux/i.test(pw) },
+  { rule: "What is the bite of 'XX? (Enter the 2-digit year)", test: pw => /87/.test(pw) },
+  { rule: "What toxic agent says 'Welcome to my world'?", test: pw => /viper/i.test(pw) },
+  { rule: "Winston says: 'I'm not a monkey, I'm a...'", test: pw => /scientist/i.test(pw) },
+  { rule: "What does the community call Paimon? (2 words)", test: pw => /emergency food/i.test(pw) },
+  { rule: "What is the name of the default Minecraft skin?", test: pw => /steve/i.test(pw) },
+  { rule: "A rare pickaxe in Fortnite usually costs ___ V-Bucks", test: pw => /800/.test(pw) },
+  { rule: "Who sang 'Not Like Us'?", test: pw => /kendrick/i.test(pw) },
+  { rule: "Name the streamer who famously did a 30-day subathon in a fake prison (First name)", test: pw => /kai/i.test(pw) },
+  { rule: "Main character of Breaking Bad (First name)", test: pw => /walter/i.test(pw) },
+  { rule: "What is the bear's name in Five Nights at Freddy's?", test: pw => /freddy/i.test(pw) },
+  { rule: "What do you call a fake Among Us player?", test: pw => /imposter/i.test(pw) },
+  { rule: "Gen Z slang for 'lying'", test: pw => /cap/i.test(pw) },
+  { rule: "Finish the lyric: Creeper, Aw ___", test: pw => /man/i.test(pw) },
+  { rule: "Finish the lyric: Never gonna give you ___", test: pw => /up/i.test(pw) },
+  { rule: "Short video app that rhymes with 'Clock Clock'", test: pw => /tiktok/i.test(pw) },
+  { rule: "First name of the city in GTA 6", test: pw => /vice/i.test(pw) },
+  { rule: "What color is the Discord logo?", test: pw => /(blurple|blue|purple)/i.test(pw) }
+];
+
+function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5); }
+let rules = shuffle(RULE_POOL); 
+
+function updateUI() {
+  const active = rules.slice(0, level + 1);
+  const list = $("rules-list");
+  if(active.length === 0) return;
+  list.innerHTML = active.map((r, i) => {
+    let isCurrent = i === level;
+    let colorClass = isCurrent ? "text-white font-bold text-base drop-shadow-md" : "text-green-300 line-through opacity-60 text-sm";
+    return `<li class="${colorClass} transition-all duration-300"><b>Rule ${i+1}:</b> ${r.rule}</li>`;
+  }).join('');
+  $("rules-container").scrollTop = $("rules-container").scrollHeight;
+  if (level >= rules.length) {
+    sfx.success();
+    msg.innerHTML = "🏆 SYSTEM UNLOCKED."; 
+    msg.className = "text-xl mt-2 font-black text-green-400 drop-shadow-[0_0_10px_green] text-center uppercase tracking-widest";
+    btn.disabled = true; pwInput.disabled = true; skipRuleBtn.disabled = true; 
+    appContainer.classList.add("border-green-400/50", "bg-green-900/10");
+  }
+}
+
+skipRuleBtn.onclick = () => {
+  if (level >= rules.length) return;
+  sfx.pop(); rules.splice(level, 1);
+  msg.innerText = "⏭ Policy Bypassed."; 
+  msg.className = "text-sm mt-2 font-bold text-yellow-300 drop-shadow-md text-center uppercase tracking-widest fade-in";
+  updateUI();
+};
+
+btn.onclick = () => {
+  const pw = pwInput.value;
+  const active = rules.slice(0, level + 1);
+  for (let r of active) {
+    if (!r.test(pw)) {
+      sfx.error(); 
+      shakeElement(appContainer);
+      msg.innerText = `❌ Authentication Failed!`; 
+      msg.className = "text-sm mt-2 font-bold text-red-400 drop-shadow-md text-center uppercase tracking-widest";
+      return triggerRandomPenalty(); 
+    }
+  }
+  sfx.success(); level++;
+  msg.innerText = "✅ Policy Cleared. Incoming..."; 
+  msg.className = "text-sm mt-2 font-bold text-green-300 drop-shadow-md text-center uppercase tracking-widest fade-in";
+  updateUI();
+};
+
+updateUI();
+</script>
+</body>
+</html>
