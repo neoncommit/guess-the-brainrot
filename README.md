@@ -66,4 +66,4 @@ Feel free to check the [issues page](https://github.com/neoncommit/guess-the-bra
 This project is open-source and available under the [MIT License](LICENSE).
 
 ---
-<sub>*Disclaimer: This project was built completely using Gemini, with prompting and questionnaire assistance from ChatGPT.*</sub>
+<sub>*Disclaimer: This project was built using Gemini, with prompting and questionnaire assistance from ChatGPT.*</sub>
